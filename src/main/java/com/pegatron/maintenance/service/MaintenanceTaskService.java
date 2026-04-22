@@ -270,11 +270,27 @@ import java.util.Map;
 
     @Transactional
     public MaintenanceTask completeTask(Long lineId) {
-        MaintenanceTask task = getActiveTask(lineId);
+        // 1. Obtener la tarea actual y completarla
+        MaintenanceTask currentTask = getActiveTask(lineId);
+        currentTask.setStatus(MaintenanceStatus.COMPLETED);
+        currentTask.setPerformedDate(LocalDate.now());
+        repository.save(currentTask);
 
-        task.setStatus(MaintenanceStatus.COMPLETED);
+        // 2. Crear la nueva tarea automáticamente
+        MaintenanceTask nextTask = new MaintenanceTask();
+        nextTask.setLine(currentTask.getLine());
+        nextTask.setType(currentTask.getType()); // Mantiene si es Quincenal o Mensual
+        nextTask.setStatus(MaintenanceStatus.PENDING); // O el estado inicial que uses
 
-        return repository.save(task);
+        // 3. Calcular fecha según el tipo (Enum que creamos antes)
+        if (currentTask.getType() == MaintenanceType.QUINCENAL) {
+            nextTask.setDueDate(currentTask.getDueDate().plusDays(15));
+        } else {
+            nextTask.setDueDate(currentTask.getDueDate().plusMonths(1));
+        }
+
+        return repository.save(nextTask);
+    }
     }
 
 }
