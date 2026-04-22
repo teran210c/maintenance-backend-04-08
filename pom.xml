@@ -42,10 +42,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
+<<<<<<< HEAD
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+=======
+>>>>>>> 42eff556785dab33b7a578fe4df2c4d79f6d3b7d
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
