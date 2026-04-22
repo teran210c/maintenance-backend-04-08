@@ -22,9 +22,10 @@ public class MaintenanceTask {
     @JoinColumn(name = "line_id", nullable = false)
     private Line line;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private MaintenanceType type;
+   @Enumerated(EnumType.STRING)
+   @Column(name = "type", columnDefinition = "varchar(255)", nullable = true) // Cambia a nullable true temporalmente
+   private MaintenanceType type;
+
 
     @Column(nullable = false)
     private LocalDate dueDate;
