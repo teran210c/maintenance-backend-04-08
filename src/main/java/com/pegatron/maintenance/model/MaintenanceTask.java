@@ -22,6 +22,10 @@ public class MaintenanceTask {
     @JoinColumn(name = "line_id", nullable = false)
     private Line line;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MaintenanceType type;
+
     @Column(nullable = false)
     private LocalDate dueDate;
 
