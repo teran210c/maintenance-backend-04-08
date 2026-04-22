@@ -291,6 +291,5 @@ import java.util.Map;
 
         return repository.save(nextTask);
     }
-    }
 
 }
