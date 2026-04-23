@@ -8,6 +8,7 @@ import com.pegatron.maintenance.repository.ChecklistResultRepository;
 import com.pegatron.maintenance.repository.ChecklistTemplateRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
 
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -83,6 +84,27 @@ public class ChecklistResultService {
         }
 
         return resultRepository.save(result);
+    }
+
+    @Transactional
+    public ChecklistResult addTaskToModule(Long moduleId, String itemName){
+        MaintenanceModule module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new RuntimeException("Module not found"));
+
+        ChecklistResult newItem = new ChecklistResult();
+        newItem.setModule(module);
+        newItem.setItemName(itemName);
+
+        newItem.setResult(ChecklistStatus.PENDING);
+
+        newItem.setNotes("");
+
+        return resultRepository.save(newItem);
+
+    }
+
+    public void delete(Long id) {
+        resultRepository.deleteById(id);
     }
 
 }
