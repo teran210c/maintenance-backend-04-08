@@ -9,5 +9,6 @@ public interface ChecklistTemplateRepository
         extends JpaRepository<ChecklistTemplate, Long> {
 
     List<ChecklistTemplate> findByModuleName(String moduleName);
+    List<ChecklistTemplate> findByModuleNameAndMaintenanceType(String moduleName, String maintenanceType);
 
 }
