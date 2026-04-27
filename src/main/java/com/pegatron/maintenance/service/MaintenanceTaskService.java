@@ -5,6 +5,7 @@ import com.pegatron.maintenance.repository.ChecklistResultRepository;
 import com.pegatron.maintenance.repository.LineModuleRepository;
 import com.pegatron.maintenance.repository.MaintenanceTaskRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
+import com.sun.tools.javac.Main;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,10 +38,10 @@ import java.util.Map;
         this.checklistResultRepository = checklistResultRepository;
     }
 
-    public MaintenanceTask getActiveTask(Long lineId) {
+    public MaintenanceTask getActiveTask(Long lineId, MaintenanceType type) {
 
         List<MaintenanceTask> tasks =
-                repository.findActiveTasks(lineId);
+                repository.findActiveTasksByLineAndType(lineId, type);
 
         if (tasks.isEmpty()) {
             throw new ResponseStatusException(
@@ -52,13 +53,12 @@ import java.util.Map;
     }
 
     @Transactional
-    public MaintenanceTask acceptTask(Long lineId) {
+    public MaintenanceTask acceptTask(Long lineId, MaintenanceType type) {
 
-        MaintenanceTask task = getActiveTask(lineId);
+        MaintenanceTask task = getActiveTask(lineId, type);
 
         // cambiar estado
         task.setStatus(MaintenanceStatus.IN_PROGRESS);
-        task.setPerformedDate(LocalDate.now());
 
         repository.save(task);
 
@@ -89,9 +89,9 @@ import java.util.Map;
     }
 
     @Transactional
-    public MaintenanceTask snoozeTask(Long lineId, int hours) {
+    public MaintenanceTask snoozeTask(Long lineId, MaintenanceType type, int hours) {
 
-        MaintenanceTask task = getActiveTask(lineId);
+        MaintenanceTask task = getActiveTask(lineId, type);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -117,9 +117,9 @@ import java.util.Map;
     }
 
     @Transactional
-    public MaintenanceTask rescheduleTask(Long lineId, String date) {
+    public MaintenanceTask rescheduleTask(Long lineId, MaintenanceType type, String date) {
 
-        MaintenanceTask task = getActiveTask(lineId);
+        MaintenanceTask task = getActiveTask(lineId, type);
 
         LocalDate newDate = LocalDate.parse(date);
 
@@ -130,9 +130,9 @@ import java.util.Map;
         return repository.save(task);
     }
 
-    public List<MaintenanceModule> getModules(Long lineId){
+    public List<MaintenanceModule> getModules(Long lineId, MaintenanceType type){
 
-        MaintenanceTask task = getActiveTask(lineId);
+        MaintenanceTask task = getActiveTask(lineId, type);
 
         return moduleRepository.findByMaintenanceId(task.getId());
 
@@ -156,13 +156,19 @@ import java.util.Map;
         }
 
         Long lineId = task.getLine().getId();
+        MaintenanceType type = task.getType();
 
-        boolean exists = repository.existsActiveByLineId(lineId);
+        boolean exists =
+                repository.existsByLineIdAndTypeAndStatusIn(
+                        lineId,
+                        type,
+                        List.of(MaintenanceStatus.PENDING, MaintenanceStatus.IN_PROGRESS)
+                );
 
         if (exists) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "There is already an active maintenance for this line"
+                    "There is already an active" + type + " maintenance for this line"
             );
         }
 
@@ -238,6 +244,7 @@ import java.util.Map;
                 Map<String, Object> event = new HashMap<>();
                 event.put("date", task.getPerformedDate());
                 event.put("status", "COMPLETED");
+                event.put("type", task.getType());
                 events.add(event);
             }
         }
@@ -250,6 +257,7 @@ import java.util.Map;
             // Usamos la fecha de vencimiento o la fecha en que se inició
             event.put("date", task.getDueDate());
             event.put("status", "IN_PROGRESS");
+            event.put("type", task.getType());
             events.add(event);
         }
 
@@ -262,6 +270,7 @@ import java.util.Map;
 
             event.put("date", displayDate);
             event.put("status", "PENDING");
+            event.put("type", task.getType());
             events.add(event);
         }
 
@@ -269,9 +278,9 @@ import java.util.Map;
     }
 
     @Transactional
-    public MaintenanceTask completeTask(Long lineId) {
+    public MaintenanceTask completeTask(Long lineId, MaintenanceType type) {
         // 1. Obtener la tarea actual y completarla
-        MaintenanceTask currentTask = getActiveTask(lineId);
+        MaintenanceTask currentTask = getActiveTask(lineId, type);
         currentTask.setStatus(MaintenanceStatus.COMPLETED);
         currentTask.setPerformedDate(LocalDate.now());
         repository.save(currentTask);
@@ -291,5 +300,14 @@ import java.util.Map;
 
         return repository.save(nextTask);
     }
+
+    public MaintenanceTask getActiveByLineIdAndType(Long lineId, MaintenanceType type){
+        return repository.findByLineIdAndTypeAndStatusIn(
+                lineId,
+                type,
+                List.of(MaintenanceStatus.PENDING, MaintenanceStatus.IN_PROGRESS)
+        ).orElseThrow(() -> new RuntimeException("Maintenance not found"));
+    }
+
 
 }
