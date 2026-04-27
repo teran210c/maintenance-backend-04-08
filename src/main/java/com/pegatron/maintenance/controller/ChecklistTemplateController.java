@@ -18,9 +18,16 @@ public class ChecklistTemplateController {
     }
 
     @GetMapping
-    public List<ChecklistTemplate> getAll() {
+    public List<ChecklistTemplate> getTemplates(
+            @RequestParam(required = false) String moduleName,
+            @RequestParam(required = false) String maintenanceType
+    ) {
+        if (moduleName != null && maintenanceType != null) {
+            return repo.findByModuleNameAndMaintenanceType(moduleName, maintenanceType);
+        }
         return repo.findAll();
     }
+
 
     @PostMapping
     public ChecklistTemplate create(@RequestBody ChecklistTemplate t) {
