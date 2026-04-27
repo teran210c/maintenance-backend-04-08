@@ -1,6 +1,7 @@
 package com.pegatron.maintenance.controller;
 
 import com.pegatron.maintenance.model.LineModule;
+import com.pegatron.maintenance.model.MaintenanceType;
 import com.pegatron.maintenance.service.LineModuleService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +18,14 @@ public class LineModuleController {
     }
 
     @GetMapping("/line/{lineId}")
-    public List<LineModule> getModulesByLine(@PathVariable Long lineId) {
-        return service.getModulesByLine(lineId);
+    public List<LineModule> getModulesByLine(
+            @PathVariable Long lineId,
+            @RequestParam(required = false) MaintenanceType type
+    ) {
+        // Por ahora solo logueamos, pero ya recibimos el dato
+        return service.getModulesByLine(lineId, type);
     }
+
 
     @PostMapping
     public LineModule create(@RequestBody LineModule module) {
