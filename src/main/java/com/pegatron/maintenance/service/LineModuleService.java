@@ -30,11 +30,11 @@ public class LineModuleService {
         return repository.findByLineId(lineId, type);
     }
 
-    public LineModule save(LineModule module) {
+    public LineModule save(LineModule module, MaintenanceType type) {
         LineModule saved = repository.save(module);
 
         Optional<MaintenanceTask> active = maintenanceTaskRepository
-                .findByLineIdAndStatus(module.getLine().getId(), MaintenanceStatus.IN_PROGRESS);
+                .findByLineIdAndStatusAndType(module.getLine().getId(), MaintenanceStatus.IN_PROGRESS, type);
 
         active.ifPresent(task -> {
             MaintenanceModule mm = new MaintenanceModule();
