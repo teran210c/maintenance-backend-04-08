@@ -18,4 +18,6 @@ public class ChecklistTemplate {
     private String moduleName;
 
     private String itemName;
+
+    private String maintenanceType;
 }
