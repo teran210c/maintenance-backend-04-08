@@ -26,21 +26,27 @@ public class LineModuleController {
         return service.getModulesByLine(lineId, type);
     }
 
-
     @PostMapping
-    public LineModule create(@RequestBody LineModule module) {
-        return service.save(module);
+    public LineModule create(
+            @RequestBody LineModule module,
+            @RequestParam MaintenanceType type // Recibimos el tipo desde la URL
+    ) {
+        return service.save(module, type);
     }
 
     @PutMapping("/{id}")
-    public LineModule update(@PathVariable Long id, @RequestBody LineModule updated) {
+    public LineModule update(
+            @PathVariable Long id,
+            @RequestBody LineModule updated,
+            @RequestParam MaintenanceType type
+    ) {
 
         LineModule existing = service.findById(id);
 
         existing.setModuleName(updated.getModuleName());
         existing.setLine(updated.getLine());
 
-        return service.save(existing);
+        return service.save(existing, type);
     }
 
     @DeleteMapping("/{id}")
