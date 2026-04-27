@@ -89,7 +89,10 @@ public class MaintenanceTaskController {
     }
 
     @PostMapping("/complete/{lineId}")
-    public MaintenanceTask completeTask(@PathVariable Long lineId, @RequestParam MaintenanceType type) {
+    public MaintenanceTask completeTask(
+            @PathVariable Long lineId,
+            @RequestParam MaintenanceType type
+    ) {
         return service.completeTask(lineId, type);
     }
 
