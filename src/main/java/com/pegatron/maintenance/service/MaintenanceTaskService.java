@@ -13,10 +13,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static com.pegatron.maintenance.model.MaintenanceType.*;
 
 @Service
     public class MaintenanceTaskService {
@@ -72,7 +71,7 @@ import java.util.Map;
 
         // leer módulos configurados para la línea
         List<LineModule> lineModules =
-                lineModuleRepository.findByLineId(lineId);
+                lineModuleRepository.findByLineId(lineId, type);
 
         // crear módulos del mantenimiento
         for (LineModule lm : lineModules) {
@@ -286,19 +285,50 @@ import java.util.Map;
         repository.save(currentTask);
 
         // 2. Crear la nueva tarea automáticamente
-        MaintenanceTask nextTask = new MaintenanceTask();
-        nextTask.setLine(currentTask.getLine());
-        nextTask.setType(currentTask.getType()); // Mantiene si es Quincenal o Mensual
-        nextTask.setStatus(MaintenanceStatus.PENDING); // O el estado inicial que uses
+        List<MaintenanceType> types = List.of(
+                MaintenanceType.SEMANAL,
+                MaintenanceType.QUINCENAL,
+                MaintenanceType.MENSUAL,
+                MaintenanceType.TRIMESTRAL,
+                MaintenanceType.CUATRIMESTRAL,
+                MaintenanceType.SEMESTRAL,
+                MaintenanceType.ANUAL
+        );
+        for (MaintenanceType t : types) {
 
-        // 3. Calcular fecha según el tipo (Enum que creamos antes)
-        if (currentTask.getType() == MaintenanceType.QUINCENAL) {
-            nextTask.setDueDate(currentTask.getDueDate().plusDays(15));
-        } else {
-            nextTask.setDueDate(currentTask.getDueDate().plusMonths(1));
+            boolean exists = repository.existsByLineIdAndTypeAndStatusIn(
+                    lineId,
+                    t,
+                    List.of(MaintenanceStatus.PENDING, MaintenanceStatus.IN_PROGRESS)
+            );
+
+            if (!exists) {
+                MaintenanceTask newTask = new MaintenanceTask();
+                newTask.setLine(currentTask.getLine());
+                newTask.setType(t);
+                newTask.setStatus(MaintenanceStatus.PENDING);
+
+                LocalDate baseDate = currentTask.getDueDate();
+
+                newTask.setDueDate(nexDate(t, baseDate));
+
+                repository.save(newTask);
+            }
         }
+        return currentTask;
+    }
 
-        return repository.save(nextTask);
+    private LocalDate nexDate(MaintenanceType type, LocalDate baseDate) {
+        return switch (type) {
+            case SEMANAL -> baseDate.plusWeeks(1);
+            case QUINCENAL -> baseDate.plusDays(15);
+            case MENSUAL -> baseDate.plusMonths(1);
+            case TRIMESTRAL -> baseDate.plusMonths(3);
+            case CUATRIMESTRAL -> baseDate.plusMonths(4);
+            case SEMESTRAL -> baseDate.plusMonths(6);
+            case ANUAL -> baseDate.plusYears(1);
+
+        };
     }
 
     public MaintenanceTask getActiveByLineIdAndType(Long lineId, MaintenanceType type){
