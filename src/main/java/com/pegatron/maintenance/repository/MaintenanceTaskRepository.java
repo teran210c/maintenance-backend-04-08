@@ -2,6 +2,7 @@ package com.pegatron.maintenance.repository;
 
 import com.pegatron.maintenance.model.MaintenanceTask;
 import com.pegatron.maintenance.model.MaintenanceStatus;
+import com.pegatron.maintenance.model.MaintenanceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -65,6 +66,12 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
     @Query("SELECT COUNT(m) > 0 FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status != 'COMPLETED'")
     boolean existsActiveByLineId(@Param("lineId") Long lineId);
 
+    boolean existsByLineIdAndTypeAndStatusIn(
+            Long lineId,
+            MaintenanceType type,
+            List<MaintenanceStatus> statuses
+    );
+
     // Reemplaza estos métodos en tu MaintenanceTaskRepository.java
     @Query("SELECT m FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status = 'COMPLETED'")
     List<MaintenanceTask> findCompletedTasks(@Param("lineId") Long lineId);
@@ -74,5 +81,20 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
 
     @Query("SELECT m FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status = 'IN_PROGRESS'")
     List<MaintenanceTask> findInProgressTasks(@Param("lineId") Long lineId);
+
+    Optional<MaintenanceTask>
+    findByLineIdAndTypeAndStatusIn(
+            Long lineId,
+            MaintenanceType type,
+            List<MaintenanceStatus> statuses
+    );
+
+    @Query("""
+        SELECT t FROM MaintenanceTask t WHERE t.line.id = :lineId
+        AND t.type = :type
+        AND t.status IN ('PENDING', 'IN_PROGRESS')
+        ORDER BY t.dueDate DESC
+""")
+    List<MaintenanceTask> findActiveTasksByLineAndType(Long lineId, MaintenanceType type);
 
 }
