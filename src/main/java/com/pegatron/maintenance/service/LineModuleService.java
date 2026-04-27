@@ -1,9 +1,6 @@
 package com.pegatron.maintenance.service;
 
-import com.pegatron.maintenance.model.LineModule;
-import com.pegatron.maintenance.model.MaintenanceModule;
-import com.pegatron.maintenance.model.MaintenanceStatus;
-import com.pegatron.maintenance.model.MaintenanceTask;
+import com.pegatron.maintenance.model.*;
 import com.pegatron.maintenance.repository.LineModuleRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
 import com.pegatron.maintenance.repository.MaintenanceTaskRepository;
@@ -29,8 +26,8 @@ public class LineModuleService {
         this.maintenanceModuleRepository = maintenanceModuleRepository;
     }
 
-    public List<LineModule> getModulesByLine(Long lineId) {
-        return repository.findByLineId(lineId);
+    public List<LineModule> getModulesByLine(Long lineId, MaintenanceType type) {
+        return repository.findByLineId(lineId, type);
     }
 
     public LineModule save(LineModule module) {
