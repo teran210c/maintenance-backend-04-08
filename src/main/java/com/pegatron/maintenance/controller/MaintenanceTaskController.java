@@ -2,6 +2,7 @@ package com.pegatron.maintenance.controller;
 
 import com.pegatron.maintenance.model.MaintenanceModule;
 import com.pegatron.maintenance.model.MaintenanceTask;
+import com.pegatron.maintenance.model.MaintenanceType;
 import com.pegatron.maintenance.service.MaintenanceTaskService;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,31 +21,35 @@ public class MaintenanceTaskController {
     }
 
     @GetMapping("/active/{lineId}")
-    public MaintenanceTask getActiveTask(@PathVariable Long lineId) {
-
-        return service.getActiveTask(lineId);
+    public MaintenanceTask getActiveByLineAndType(
+            @PathVariable Long lineId,
+            @RequestParam MaintenanceType type
+    ) {
+        return service.getActiveByLineIdAndType(lineId, type);
     }
 
     @PostMapping("/accept/{lineId}")
-    public MaintenanceTask acceptTask(@PathVariable Long lineId) {
+    public MaintenanceTask acceptTask(@PathVariable Long lineId, @RequestParam MaintenanceType type) {
 
-        return service.acceptTask(lineId);
+        return service.acceptTask(lineId, type);
     }
 
     @PostMapping("/snooze/{lineId}")
     public MaintenanceTask snoozeTask(
             @PathVariable Long lineId,
+            @RequestParam MaintenanceType type,
             @RequestParam int hours) {
 
-        return service.snoozeTask(lineId, hours);
+        return service.snoozeTask(lineId, type, hours);
     }
 
     @PostMapping("/reschedule/{lineId}")
     public MaintenanceTask rescheduleTask(
             @PathVariable Long lineId,
+            @RequestParam MaintenanceType type,
             @RequestParam String date) {
 
-        return service.rescheduleTask(lineId, date);
+        return service.rescheduleTask(lineId, type, date);
     }
 
     @GetMapping("/history/{lineId}")
@@ -53,9 +58,9 @@ public class MaintenanceTaskController {
     }
 
     @GetMapping("/modules/{lineId}")
-    public List<MaintenanceModule> getModules(@PathVariable Long lineId){
+    public List<MaintenanceModule> getModules(@PathVariable Long lineId, @RequestParam MaintenanceType type){
 
-        return service.getModules(lineId);
+        return service.getModules(lineId, type);
     }
 
     @GetMapping("/upcoming")
@@ -84,8 +89,8 @@ public class MaintenanceTaskController {
     }
 
     @PostMapping("/complete/{lineId}")
-    public MaintenanceTask completeTask(@PathVariable Long lineId) {
-        return service.completeTask(lineId);
+    public MaintenanceTask completeTask(@PathVariable Long lineId, @RequestParam MaintenanceType type) {
+        return service.completeTask(lineId, type);
     }
 
 
