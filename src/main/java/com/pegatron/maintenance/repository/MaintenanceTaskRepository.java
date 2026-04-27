@@ -1,97 +1,100 @@
-package com.pegatron.maintenance.controller;
+package com.pegatron.maintenance.repository;
 
-import com.pegatron.maintenance.model.MaintenanceModule;
 import com.pegatron.maintenance.model.MaintenanceTask;
+import com.pegatron.maintenance.model.MaintenanceStatus;
 import com.pegatron.maintenance.model.MaintenanceType;
-import com.pegatron.maintenance.service.MaintenanceTaskService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
-@CrossOrigin(origins = "*")
-@RestController
-@RequestMapping("/api/maintenance")
-public class MaintenanceTaskController {
+public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask, Long> {
 
-    private final MaintenanceTaskService service;
+    Optional<MaintenanceTask> findByLineIdAndStatus(Long lineId, MaintenanceStatus status);
 
-    public MaintenanceTaskController(MaintenanceTaskService service) {
-        this.service = service;
-    }
+    // Cambia esto en MaintenanceTaskRepository.java
+    @Query("""
+    SELECT DISTINCT m.performedDate
+    FROM MaintenanceTask m
+    WHERE m.line.id = :lineId
+    AND m.status = 'COMPLETED'
+    AND m.performedDate IS NOT NULL
+""")
+    List<LocalDate> findCompletedMaintenanceDates(@Param("lineId") Long lineId);
 
-    @GetMapping("/active/{lineId}")
-    public MaintenanceTask getActiveByLineAndType(
-            @PathVariable Long lineId,
-            @RequestParam MaintenanceType type
-    ) {
-        return service.getActiveByLineIdAndType(lineId, type);
-    }
+    @Query("""
+    SELECT DISTINCT m.performedDate
+    FROM MaintenanceTask m
+    WHERE m.line.id = :lineId
+    AND m.status = 'IN_PROGRESS'
+    AND m.performedDate IS NOT NULL
+""")
+    List<LocalDate> findInProgressMaintenanceDates(@Param("lineId") Long lineId);
 
-    @PostMapping("/accept/{lineId}")
-    public MaintenanceTask acceptTask(@PathVariable Long lineId, @RequestParam MaintenanceType type) {
 
-        return service.acceptTask(lineId, type);
-    }
 
-    @PostMapping("/snooze/{lineId}")
-    public MaintenanceTask snoozeTask(
-            @PathVariable Long lineId,
-            @RequestParam MaintenanceType type,
-            @RequestParam int hours) {
+    @Query("""
+        SELECT DISTINCT 
+            COALESCE(CAST(m.snoozeUntil AS date), m.dueDate)
+        FROM MaintenanceTask m
+        WHERE m.line.id = :lineId
+        AND m.status = 'PENDING'
+    """)
+    List<LocalDate> findPendingMaintenanceDates(@Param("lineId") Long lineId);
 
-        return service.snoozeTask(lineId, type, hours);
-    }
+    @Query("""
+        SELECT m
+        FROM MaintenanceTask m
+        WHERE m.line.id = :lineId
+        AND (m.status = 'PENDING' OR m.status = 'IN_PROGRESS')
+        ORDER BY m.id DESC
+    """)
+    List<MaintenanceTask> findActiveTasks(@Param("lineId") Long lineId);
 
-    @PostMapping("/reschedule/{lineId}")
-    public MaintenanceTask rescheduleTask(
-            @PathVariable Long lineId,
-            @RequestParam MaintenanceType type,
-            @RequestParam String date) {
+    @Query("""
+        SELECT m
+        FROM MaintenanceTask m
+        WHERE m.status = 'PENDING'
+        AND COALESCE(CAST(m.snoozeUntil AS date), m.dueDate) BETWEEN :today AND :limitDate
+        ORDER BY COALESCE(CAST(m.snoozeUntil AS date), m.dueDate) ASC
+    """)
+    List<MaintenanceTask> findUpcomingMaintenances(@Param("today") LocalDate today, @Param("limitDate") LocalDate limitDate);
 
-        return service.rescheduleTask(lineId, type, date);
-    }
+    @Query("SELECT COUNT(m) > 0 FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status != 'COMPLETED'")
+    boolean existsActiveByLineId(@Param("lineId") Long lineId);
 
-    @GetMapping("/history/{lineId}")
-    public List<Map<String, Object>> getCalendarEvents(@PathVariable Long lineId) {
-        return service.getCalendarEvents(lineId);
-    }
+    boolean existsByLineIdAndTypeAndStatusIn(
+            Long lineId,
+            MaintenanceType type,
+            List<MaintenanceStatus> statuses
+    );
 
-    @GetMapping("/modules/{lineId}")
-    public List<MaintenanceModule> getModules(@PathVariable Long lineId, @RequestParam MaintenanceType type){
+    // Reemplaza estos métodos en tu MaintenanceTaskRepository.java
+    @Query("SELECT m FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status = 'COMPLETED'")
+    List<MaintenanceTask> findCompletedTasks(@Param("lineId") Long lineId);
 
-        return service.getModules(lineId, type);
-    }
+    @Query("SELECT m FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status = 'PENDING'")
+    List<MaintenanceTask> findPendingTasks(@Param("lineId") Long lineId);
 
-    @GetMapping("/upcoming")
-    public List<MaintenanceTask> getUpcomingMaintenances() {
-        return service.getUpcomingMaintenances();
-    }
+    @Query("SELECT m FROM MaintenanceTask m WHERE m.line.id = :lineId AND m.status = 'IN_PROGRESS'")
+    List<MaintenanceTask> findInProgressTasks(@Param("lineId") Long lineId);
 
-    @GetMapping
-    public List<MaintenanceTask> getAll() {
-        return service.getAll();
-    }
+    Optional<MaintenanceTask>
+    findByLineIdAndTypeAndStatusIn(
+            Long lineId,
+            MaintenanceType type,
+            List<MaintenanceStatus> statuses
+    );
 
-    @PostMapping
-    public MaintenanceTask create(@RequestBody MaintenanceTask task) {
-        return service.create(task);
-    }
-
-    @PutMapping("/{id}")
-    public MaintenanceTask update(@PathVariable Long id, @RequestBody MaintenanceTask task) {
-        return service.update(id, task);
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
-    }
-
-    @PostMapping("/complete/{lineId}")
-    public MaintenanceTask completeTask(@PathVariable Long lineId, @RequestParam MaintenanceType type) {
-        return service.completeTask(lineId, type);
-    }
-
+    @Query("""
+        SELECT t FROM MaintenanceTask t WHERE t.line.id = :lineId
+        AND t.type = :type
+        AND t.status IN ('PENDING', 'IN_PROGRESS')
+        ORDER BY t.dueDate DESC
+""")
+    List<MaintenanceTask> findActiveTasksByLineAndType(Long lineId, MaintenanceType type);
 
 }
