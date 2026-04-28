@@ -27,6 +27,5 @@ public class ChecklistResult {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Enumerated(EnumType.STRING)
-    private MaintenanceType maintenanceType;
+    private String maintenanceType;
 }
