@@ -19,5 +19,6 @@ public class ChecklistTemplate {
 
     private String itemName;
 
-    private String maintenanceType;
+    @Enumerated(EnumType.STRING)
+    private MaintenanceType maintenanceType;
 }
