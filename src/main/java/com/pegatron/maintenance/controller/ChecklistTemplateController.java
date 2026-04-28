@@ -20,10 +20,14 @@ public class ChecklistTemplateController {
     @GetMapping
     public List<ChecklistTemplate> getTemplates(
             @RequestParam(required = false) String moduleName,
-            @RequestParam(required = false) String maintenanceType
+            @RequestParam(required = false) String maintenanceType // Este llega como String de la URL
     ) {
         if (moduleName != null && maintenanceType != null) {
-            return repo.findByModuleNameAndMaintenanceType(moduleName, maintenanceType);
+            // CORRECCIÓN: Convertir el String a Enum
+            com.pegatron.maintenance.model.MaintenanceType typeEnum =
+                    com.pegatron.maintenance.model.MaintenanceType.valueOf(maintenanceType.toUpperCase());
+
+            return repo.findByModuleNameAndMaintenanceType(moduleName, typeEnum);
         }
         return repo.findAll();
     }
