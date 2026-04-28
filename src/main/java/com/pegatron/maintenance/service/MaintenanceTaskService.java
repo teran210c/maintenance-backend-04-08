@@ -1,10 +1,7 @@
 package com.pegatron.maintenance.service;
 
 import com.pegatron.maintenance.model.*;
-import com.pegatron.maintenance.repository.ChecklistResultRepository;
-import com.pegatron.maintenance.repository.LineModuleRepository;
-import com.pegatron.maintenance.repository.MaintenanceTaskRepository;
-import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
+import com.pegatron.maintenance.repository.*;
 import com.sun.tools.javac.Main;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
@@ -24,17 +21,19 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
     private final MaintenanceModuleRepository moduleRepository;
     private final LineModuleRepository lineModuleRepository;
     private final ChecklistResultRepository checklistResultRepository;
+    private final ChecklistTemplateRepository checklistTemplateRepository;
 
     public MaintenanceTaskService(
             MaintenanceTaskRepository repository,
             MaintenanceModuleRepository moduleRepository,
             LineModuleRepository lineModuleRepository,
-            ChecklistResultRepository checklistResultRepository
+            ChecklistResultRepository checklistResultRepository, ChecklistTemplateRepository checklistTemplateRepository
     ) {
         this.repository = repository;
         this.moduleRepository = moduleRepository;
         this.lineModuleRepository = lineModuleRepository;
         this.checklistResultRepository = checklistResultRepository;
+        this.checklistTemplateRepository = checklistTemplateRepository;
     }
 
     public MaintenanceTask getActiveTask(Long lineId, MaintenanceType type) {
@@ -51,41 +50,6 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
         return tasks.get(0); // el más reciente
     }
 
-    @Transactional
-    public MaintenanceTask acceptTask(Long lineId, MaintenanceType type) {
-
-        MaintenanceTask task = getActiveTask(lineId, type);
-
-        // cambiar estado
-        task.setStatus(MaintenanceStatus.IN_PROGRESS);
-
-        repository.save(task);
-
-        // evitar duplicados
-        List<MaintenanceModule> existingModules =
-                moduleRepository.findByMaintenanceId(task.getId());
-
-        if (!existingModules.isEmpty()) {
-            return task;
-        }
-
-        // leer módulos configurados para la línea
-        List<LineModule> lineModules =
-                lineModuleRepository.findByLineId(lineId, type);
-
-        // crear módulos del mantenimiento
-        for (LineModule lm : lineModules) {
-
-            MaintenanceModule module = new MaintenanceModule();
-
-            module.setMaintenance(task);
-            module.setModuleName(lm.getModuleName());
-
-            moduleRepository.save(module);
-        }
-
-        return task;
-    }
 
     @Transactional
     public MaintenanceTask snoozeTask(Long lineId, MaintenanceType type, int hours) {
@@ -339,5 +303,57 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
         ).orElseThrow(() -> new RuntimeException("Maintenance not found"));
     }
 
+    @Transactional
+    public MaintenanceTask acceptTask(Long lineId, MaintenanceType type) {
 
-}
+        // 1. Buscar la tarea pendiente y cambiarla a IN_PROGRESS
+        MaintenanceTask task = getActiveTask(lineId, type);
+        task.setStatus(MaintenanceStatus.IN_PROGRESS);
+        repository.save(task);
+
+        // 2. Evitar duplicar si ya existen módulos creados
+        List<MaintenanceModule> existingModules =
+                moduleRepository.findByMaintenanceId(task.getId());
+
+        if (!existingModules.isEmpty()) {
+            return task;
+        }
+
+        // 3. Obtener los módulos configurados para la línea
+        List<LineModule> lineModules =
+                lineModuleRepository.findByLineId(lineId, type);
+
+        // 4. Crear módulos y sus resultados de checklist
+        for (LineModule lm : lineModules) {
+
+            // Crear el Módulo (La Máquina)
+            MaintenanceModule module = new MaintenanceModule();
+            module.setMaintenance(task);
+            module.setModuleName(lm.getModuleName());
+            MaintenanceModule savedModule = moduleRepository.save(module);
+
+            // 5. Buscar las plantillas (Aquí usamos el String si tu entidad ChecklistTemplate tiene String)
+            // Si tu repositorio pide MaintenanceType (Enum), quita el .name()
+            List<ChecklistTemplate> templates = checklistTemplateRepository.findByModuleNameAndMaintenanceType(
+                    lm.getModuleName(),
+                    type // Convertimos a String para coincidir con tu entidad ChecklistTemplate
+            );
+
+            // 6. Generar los registros en la tabla checklist_result
+            for (ChecklistTemplate temp : templates) {
+                ChecklistResult result = new ChecklistResult();
+
+                result.setModule(savedModule);
+                result.setItemName(temp.getItemName());
+                result.setResult(ChecklistStatus.PENDING); // Estado inicial
+                result.setNotes(""); // Comentario vacío
+
+                // Seteamos el tipo (convertido a String para tu entidad ChecklistResult)
+                result.setMaintenanceType(type.name());
+
+                checklistResultRepository.save(result);
+            }
+        }
+
+        return task;
+    }
