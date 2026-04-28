@@ -1,7 +1,10 @@
 package com.pegatron.maintenance.controller;
 
 import com.pegatron.maintenance.model.LineModule;
+import com.pegatron.maintenance.model.MaintenanceModule;
 import com.pegatron.maintenance.model.MaintenanceType;
+import com.pegatron.maintenance.repository.LineModuleRepository;
+import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
 import com.pegatron.maintenance.service.LineModuleService;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,9 +15,11 @@ import java.util.List;
 public class LineModuleController {
 
     private final LineModuleService service;
+    private final MaintenanceModuleRepository maintenanceModuleRepository;
 
-    public LineModuleController(LineModuleService service) {
+    public LineModuleController(LineModuleService service, LineModuleRepository moduleRepository, MaintenanceModuleRepository maintenanceModuleRepository) {
         this.service = service;
+        this.maintenanceModuleRepository = maintenanceModuleRepository;
     }
 
     @GetMapping("/line/{lineId}")
@@ -25,6 +30,7 @@ public class LineModuleController {
         // Por ahora solo logueamos, pero ya recibimos el dato
         return service.getModulesByLine(lineId, type);
     }
+
 
     @PostMapping
     public LineModule create(
