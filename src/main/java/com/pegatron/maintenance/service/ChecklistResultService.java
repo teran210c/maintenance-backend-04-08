@@ -66,25 +66,24 @@ public class ChecklistResultService {
         return newResults;
     }
 
+    @Transactional
     public ChecklistResult saveResult(ChecklistResult result) {
-
-        Optional<ChecklistResult> existing =
-                resultRepository.findByModule_IdAndItemName(
-                        result.getModule().getId(),
-                        result.getItemName()
-                );
-
-        if (existing.isPresent()) {
-
-            ChecklistResult r = existing.get();
-            r.setResult(result.getResult());
-            r.setNotes(result.getNotes());
-
-            return resultRepository.save(r);
+        if (result.getId() == null) {
+            return resultRepository.save(result);
         }
 
-        return resultRepository.save(result);
+        // Buscamos el registro real
+        return resultRepository.findById(result.getId()).map(existing -> {
+            // ACTUALIZAMOS SOLO LOS CAMPOS DE ESTADO Y NOTAS
+            existing.setResult(result.getResult());
+            existing.setNotes(result.getNotes());
+
+            // NO HACEMOS MERGE DEL OBJETO 'result' QUE VIENE DEL FRONT
+            // simplemente guardamos el que ya está gestionado por Hibernate (existing)
+            return resultRepository.save(existing);
+        }).orElseThrow(() -> new RuntimeException("No se encontró el item con ID: " + result.getId()));
     }
+
 
     @Transactional
     public ChecklistResult addTaskToModule(Long moduleId, String itemName){
