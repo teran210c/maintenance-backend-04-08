@@ -4,8 +4,10 @@ import com.pegatron.maintenance.dto.*;
 import com.pegatron.maintenance.model.ChecklistResult;
 import com.pegatron.maintenance.model.ChecklistStatus;
 import com.pegatron.maintenance.model.MaintenanceModule;
+import com.pegatron.maintenance.model.MaintenanceTask;
 import com.pegatron.maintenance.repository.ChecklistResultRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
+import com.pegatron.maintenance.repository.MaintenanceTaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -15,19 +17,25 @@ public class ConformanceService {
 
     private final ChecklistResultRepository resultRepository;
     private final MaintenanceModuleRepository moduleRepository;
+    private final MaintenanceTaskRepository maintenanceRepository;
 
     public ConformanceService(
             ChecklistResultRepository resultRepository,
-            MaintenanceModuleRepository moduleRepository
+            MaintenanceModuleRepository moduleRepository,
+            MaintenanceTaskRepository maintenanceRepository
     ) {
         this.resultRepository = resultRepository;
         this.moduleRepository = moduleRepository;
+        this.maintenanceRepository = maintenanceRepository;
     }
 
-    public ConformanceResponseDTO getConformance(Long lineId) {
+    public ConformanceResponseDTO getConformance(Long maintenanceId) {
+
+        MaintenanceTask task = maintenanceRepository.findById(maintenanceId)
+                .orElseThrow(() -> new RuntimeException("Maintenance not found"));
 
         List<MaintenanceModule> modules =
-                moduleRepository.findByMaintenance_Line_Id(lineId);
+                moduleRepository.findByMaintenanceId(maintenanceId);
 
         List<ConformanceModuleDTO> moduleDTOs = new ArrayList<>();
 
@@ -49,11 +57,16 @@ public class ConformanceService {
             List<ChecklistResult> results =
                     resultRepository.findByModule_Id(module.getId());
 
+            System.out.println("Module: " + module.getModuleName());
+            System.out.println("Results: " + results.size());
+
             int total = results.size();
 
             int completed = (int) results.stream()
                     .filter(r -> r.getResult() == ChecklistStatus.COMPLETED)
                     .count();
+
+            results.forEach(r -> System.out.println("Result: " + r.getResult()));
 
             int score = total == 0 ? 0 : (completed * 100) / total;
 
@@ -71,6 +84,7 @@ public class ConformanceService {
 
             moduleDTOs.add(
                     new ConformanceModuleDTO(
+                            module.getId(),
                             displayName,
                             completed,
                             total,
