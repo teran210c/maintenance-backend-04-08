@@ -26,15 +26,21 @@ public class LineModuleService {
         this.maintenanceModuleRepository = maintenanceModuleRepository;
     }
 
-    public List<LineModule> getModulesByLine(Long lineId, MaintenanceType type) {
-        return repository.findByLineId(lineId, type);
+    // 🔥 FIX: type ya no se usa aquí
+    public List<LineModule> getModulesByLine(Long lineId) {
+        return repository.findByLine_Id(lineId);
     }
 
+    // 🔥 FIX: se mantiene type porque sí se usa para buscar maintenance activo
     public LineModule save(LineModule module, MaintenanceType type) {
         LineModule saved = repository.save(module);
 
         Optional<MaintenanceTask> active = maintenanceTaskRepository
-                .findByLineIdAndStatusAndType(module.getLine().getId(), MaintenanceStatus.IN_PROGRESS, type);
+                .findByLineIdAndStatusAndType(
+                        module.getLine().getId(),
+                        MaintenanceStatus.IN_PROGRESS,
+                        type
+                );
 
         active.ifPresent(task -> {
             MaintenanceModule mm = new MaintenanceModule();

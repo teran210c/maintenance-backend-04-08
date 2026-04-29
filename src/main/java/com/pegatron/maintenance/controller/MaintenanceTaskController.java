@@ -29,9 +29,11 @@ public class MaintenanceTaskController {
     }
 
     @PostMapping("/accept/{lineId}")
-    public MaintenanceTask acceptTask(@PathVariable Long lineId, @RequestParam MaintenanceType type) {
+    public MaintenanceTask acceptTask(@PathVariable Long lineId, @RequestParam String type) {
 
-        return service.acceptTask(lineId, type);
+        MaintenanceType typeEnum = MaintenanceType.valueOf(type.toUpperCase());
+
+        return service.acceptTask(lineId, typeEnum);
     }
 
     @PostMapping("/snooze/{lineId}")
@@ -88,13 +90,9 @@ public class MaintenanceTaskController {
         service.delete(id);
     }
 
-    @PostMapping("/complete/{lineId}")
-    public MaintenanceTask completeTask(
-            @PathVariable Long lineId,
-            @RequestParam MaintenanceType type
-    ) {
-        return service.completeTask(lineId, type);
+    @PostMapping("/complete/{maintenanceId}")
+    public void completeTask(@PathVariable Long maintenanceId) {
+        service.completeTask(maintenanceId);
     }
-
 
 }

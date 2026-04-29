@@ -7,13 +7,11 @@ import com.pegatron.maintenance.model.MaintenanceModule;
 import com.pegatron.maintenance.repository.ChecklistResultRepository;
 import com.pegatron.maintenance.repository.ChecklistTemplateRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
-
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ChecklistResultService {
@@ -22,10 +20,7 @@ public class ChecklistResultService {
     private final ChecklistTemplateRepository templateRepository;
     private final MaintenanceModuleRepository moduleRepository;
 
-    public ChecklistResultService(
-            ChecklistResultRepository resultRepository,
-            ChecklistTemplateRepository templateRepository,
-            MaintenanceModuleRepository moduleRepository) {
+    public ChecklistResultService(ChecklistResultRepository resultRepository, ChecklistTemplateRepository templateRepository, MaintenanceModuleRepository moduleRepository) {
 
         this.resultRepository = resultRepository;
         this.templateRepository = templateRepository;
@@ -41,15 +36,13 @@ public class ChecklistResultService {
             return results;
         }
 
-        MaintenanceModule module = moduleRepository.findById(moduleId)
-                .orElseThrow(() -> new RuntimeException("Module not found"));
+        MaintenanceModule module = moduleRepository.findById(moduleId).orElseThrow(() -> new RuntimeException("Module not found"));
 
         String moduleName = module.getModuleName();
 
-        List<ChecklistTemplate> templates =
-                templateRepository.findByModuleName(moduleName);
+        List<ChecklistTemplate> templates = templateRepository.findByModuleName(moduleName);
 
-        List<ChecklistResult> newResults  = new ArrayList<>();
+        List<ChecklistResult> newResults = new ArrayList<>();
 
         for (ChecklistTemplate template : templates) {
 
@@ -86,9 +79,8 @@ public class ChecklistResultService {
 
 
     @Transactional
-    public ChecklistResult addTaskToModule(Long moduleId, String itemName){
-        MaintenanceModule module = moduleRepository.findById(moduleId)
-                .orElseThrow(() -> new RuntimeException("Module not found"));
+    public ChecklistResult addTaskToModule(Long moduleId, String itemName) {
+        MaintenanceModule module = moduleRepository.findById(moduleId).orElseThrow(() -> new RuntimeException("Module not found"));
 
         ChecklistResult newItem = new ChecklistResult();
         newItem.setModule(module);
