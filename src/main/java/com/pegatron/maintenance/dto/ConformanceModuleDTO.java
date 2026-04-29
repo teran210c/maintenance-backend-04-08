@@ -9,6 +9,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ConformanceModuleDTO {
 
+    private Long moduleId;
+
     private String moduleName;
 
     private int completed;
