@@ -208,7 +208,9 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
                 event.put("date", task.getPerformedDate());
                 event.put("status", "COMPLETED");
                 event.put("type", task.getType());
+                event.put("id", task.getId());
                 events.add(event);
+
             }
         }
 
@@ -221,6 +223,7 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
             event.put("date", task.getDueDate());
             event.put("status", "IN_PROGRESS");
             event.put("type", task.getType());
+            event.put("id", task.getId());
             events.add(event);
         }
 
@@ -234,6 +237,7 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
             event.put("date", displayDate);
             event.put("status", "PENDING");
             event.put("type", task.getType());
+            event.put("id", task.getId());
             events.add(event);
         }
 
