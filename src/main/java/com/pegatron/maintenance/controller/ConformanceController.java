@@ -17,9 +17,9 @@ public class ConformanceController {
         this.conformanceService = conformanceService;
     }
 
-    @GetMapping("/{lineId}")
-    public ConformanceResponseDTO getConformance(@PathVariable Long lineId) {
-        return conformanceService.getConformance(lineId);
+    @GetMapping("/{maintenanceId}")
+    public ConformanceResponseDTO getConformance(@PathVariable Long maintenanceId) {
+        return conformanceService.getConformance(maintenanceId);
     }
 
     @GetMapping("/history/{lineId}")
