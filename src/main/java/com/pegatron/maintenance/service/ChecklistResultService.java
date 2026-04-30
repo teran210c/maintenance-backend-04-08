@@ -1,9 +1,6 @@
 package com.pegatron.maintenance.service;
 
-import com.pegatron.maintenance.model.ChecklistResult;
-import com.pegatron.maintenance.model.ChecklistStatus;
-import com.pegatron.maintenance.model.ChecklistTemplate;
-import com.pegatron.maintenance.model.MaintenanceModule;
+import com.pegatron.maintenance.model.*;
 import com.pegatron.maintenance.repository.ChecklistResultRepository;
 import com.pegatron.maintenance.repository.ChecklistTemplateRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
@@ -12,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ChecklistResultService {
@@ -55,10 +53,12 @@ public class ChecklistResultService {
     @Transactional
     public ChecklistResult addTaskToModule(Long moduleId, String itemName) {
         MaintenanceModule module = moduleRepository.findById(moduleId).orElseThrow(() -> new RuntimeException("Module not found"));
+        MaintenanceTask task = module.getMaintenance();
 
         ChecklistResult newItem = new ChecklistResult();
         newItem.setModule(module);
         newItem.setItemName(itemName);
+        newItem.setMaintenanceType(task.getType());
 
         newItem.setResult(ChecklistStatus.PENDING);
 
@@ -72,4 +72,28 @@ public class ChecklistResultService {
         resultRepository.deleteById(id);
     }
 
+    public ChecklistResult updateTask(
+            Long id,
+            String newName,
+            String oldName,
+            String moduleName,
+            MaintenanceType type
+    ) {
+        ChecklistResult result = resultRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        result.setItemName(newName);
+        resultRepository.save(result);
+
+        Optional<ChecklistTemplate> templateOpt = templateRepository.findByModuleNameAndItemNameAndMaintenanceType(
+                moduleName,
+                oldName,
+                type
+        );
+        templateOpt.ifPresent(t -> {
+                t.setItemName(newName);
+        templateRepository.save(t);
+        });
+        return result;
+    }
 }
