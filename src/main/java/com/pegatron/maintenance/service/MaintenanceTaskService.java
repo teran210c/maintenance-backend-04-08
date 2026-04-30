@@ -299,10 +299,6 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
         List<MaintenanceModule> existingModules =
                 moduleRepository.findByMaintenanceId(task.getId());
 
-        if (!existingModules.isEmpty()) {
-            return task;
-        }
-
         List<LineModule> lineModules =
                 lineModuleRepository.findByLine_Id(lineId);
 
@@ -313,11 +309,17 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
             module.setModuleName(lm.getModuleName());
             MaintenanceModule savedModule = moduleRepository.save(module);
 
+            System.out.println("TYPE: " + type);
+
             List<ChecklistTemplate> templates =
                     checklistTemplateRepository.findByModuleNameAndMaintenanceType(
                             lm.getModuleName(),
                             type
                     );
+
+            System.out.println("Templates encontrados: " + templates.size());
+
+            if (templates.isEmpty()) continue;
 
             for (ChecklistTemplate temp : templates) {
                 ChecklistResult result = new ChecklistResult();

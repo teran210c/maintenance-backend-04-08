@@ -30,33 +30,7 @@ public class ChecklistResultService {
 
     public List<ChecklistResult> getResultsByModule(Long moduleId) {
 
-        List<ChecklistResult> results = resultRepository.findByModule_Id(moduleId);
-
-        if (!results.isEmpty()) {
-            return results;
-        }
-
-        MaintenanceModule module = moduleRepository.findById(moduleId).orElseThrow(() -> new RuntimeException("Module not found"));
-
-        String moduleName = module.getModuleName();
-
-        List<ChecklistTemplate> templates = templateRepository.findByModuleName(moduleName);
-
-        List<ChecklistResult> newResults = new ArrayList<>();
-
-        for (ChecklistTemplate template : templates) {
-
-            ChecklistResult result = new ChecklistResult();
-
-            result.setModule(module);
-            result.setItemName(template.getItemName());
-            result.setResult(ChecklistStatus.PENDING);
-            result.setNotes("");
-
-            newResults.add(resultRepository.save(result));
-        }
-
-        return newResults;
+        return resultRepository.findByModule_Id(moduleId);
     }
 
     @Transactional
