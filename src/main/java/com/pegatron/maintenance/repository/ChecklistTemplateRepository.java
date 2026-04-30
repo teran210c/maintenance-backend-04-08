@@ -5,6 +5,7 @@ import com.pegatron.maintenance.model.MaintenanceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ChecklistTemplateRepository
         extends JpaRepository<ChecklistTemplate, Long> {
@@ -12,4 +13,6 @@ public interface ChecklistTemplateRepository
     List<ChecklistTemplate> findByModuleName(String moduleName);
     List<ChecklistTemplate> findByModuleNameAndMaintenanceType(String moduleName, MaintenanceType maintenanceType);
 
+
+    Optional<ChecklistTemplate> findByModuleNameAndItemNameAndMaintenanceType(String moduleName, String itemName, MaintenanceType type);
 }
