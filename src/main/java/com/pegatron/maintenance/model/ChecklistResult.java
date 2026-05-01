@@ -17,6 +17,10 @@ public class ChecklistResult {
     @JoinColumn(name = "module_id", nullable = false)
     private MaintenanceModule module;
 
+    @ManyToOne
+    @JoinColumn(name = "template_id")
+    private ChecklistTemplate template;
+
     @Column(nullable = false)
     private String itemName;
 

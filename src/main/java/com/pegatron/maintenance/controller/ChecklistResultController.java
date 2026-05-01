@@ -68,11 +68,8 @@ public class ChecklistResultController {
             @RequestBody Map<String, String> body
     ) {
      String newName = body.get("itemName");
-     String oldName = body.get("oldItemName");
-     String moduleName = body.get("moduleName");
-     MaintenanceType type = MaintenanceType.valueOf(body.get("maintenanceType"));
 
-     return service.updateTask(id, newName, oldName, moduleName, type);
+     return service.updateTask(id, newName);
     }
 
 }

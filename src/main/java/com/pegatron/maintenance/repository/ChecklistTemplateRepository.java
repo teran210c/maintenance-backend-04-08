@@ -15,4 +15,6 @@ public interface ChecklistTemplateRepository
 
 
     Optional<ChecklistTemplate> findByModuleNameAndItemNameAndMaintenanceType(String moduleName, String itemName, MaintenanceType type);
+
+    Optional<ChecklistTemplate> findByModuleNameIgnoreCaseAndItemNameIgnoreCaseAndMaintenanceType(String moduleName, String trim, MaintenanceType type);
 }
