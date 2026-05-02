@@ -301,12 +301,15 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
 
         for (LineModule lm : lineModules) {
 
+            // 🔥 crear MaintenanceModule BIEN relacionado
             MaintenanceModule module = new MaintenanceModule();
             module.setMaintenance(task);
-            module.setModuleName(lm.getModuleName());
+            module.setLineModule(lm); // ✅ CLAVE
+            module.setModuleName(lm.getModuleName()); // opcional (para UI)
+
             MaintenanceModule savedModule = moduleRepository.save(module);
 
-            // 🔥 MISMA NORMALIZACIÓN
+            // 🔥 normalización (como ya lo tienes)
             String normalizedModule = normalizeModule(lm.getModuleName());
 
             List<ChecklistTemplate> templates =
@@ -320,7 +323,7 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
                 ChecklistResult result = new ChecklistResult();
 
                 result.setModule(savedModule);
-                result.setTemplate(temp); // 🔥 clave
+                result.setTemplate(temp);
                 result.setItemName(temp.getItemName());
                 result.setResult(ChecklistStatus.PENDING);
                 result.setNotes("");

@@ -16,4 +16,6 @@ public interface MaintenanceModuleRepository extends JpaRepository<MaintenanceMo
     List<MaintenanceModule> findByMaintenance_Line_IdAndModuleName(Long lineId, String moduleName);
 
     boolean existsByMaintenance_IdAndModuleName(Long maintenanceId, String cleanName);
+
+    long countByLineModule_Id(Long id);
 }

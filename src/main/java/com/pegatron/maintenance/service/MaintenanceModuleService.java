@@ -39,31 +39,29 @@ public class MaintenanceModuleService {
         return maintenanceModuleRepository.findByMaintenanceId(maintenanceId);
     }
 
-    // 🔥 Delete completo (presente + futuro)
     @Transactional
     public void delete(Long id) {
 
-        // 🔥 1. obtener MaintenanceModule real
         MaintenanceModule maintenanceModule = maintenanceModuleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MaintenanceModule not found"));
 
-        String moduleName = maintenanceModule.getModuleName();
-        Long lineId = maintenanceModule.getMaintenance().getLine().getId();
+        // 🔥 1. obtener SU lineModule
+        LineModule lineModule = maintenanceModule.getLineModule();
 
-        // 🔥 2. borrar checklist results del módulo actual
+        // 🔥 2. borrar checklist
         checklistResultRepository.deleteByModule_Id(id);
 
-        // 🔥 3. borrar maintenance module actual
+        // 🔥 3. borrar maintenance module
         maintenanceModuleRepository.delete(maintenanceModule);
 
-        // 🔥 4. buscar LineModule correspondiente
-        LineModule lineModule = lineModuleRepository
-                .findByLine_IdAndModuleName(lineId, moduleName)
-                .orElseThrow(() -> new RuntimeException("LineModule not found"));
+        // 🔥 4. verificar si alguien más usa ese lineModule
+        long usage = maintenanceModuleRepository.countByLineModule_Id(lineModule.getId());
 
-        // 🔥 5. desactivar para futuros
-        lineModule.setActive(false);
-        lineModuleRepository.save(lineModule);
+        // 🔥 5. si ya nadie lo usa → desactivar
+        if (usage == 0) {
+            lineModule.setActive(false);
+            lineModuleRepository.save(lineModule);
+        }
     }
 
     @Transactional
@@ -71,14 +69,13 @@ public class MaintenanceModuleService {
 
         String cleanName = moduleName.trim().toUpperCase();
 
-        // ✅ ahora sí correcto
         Line line = lineRepository.findById(lineId)
                 .orElseThrow(() -> new RuntimeException("Line not found"));
 
         MaintenanceTask maintenance = maintenanceTaskRepository.findById(maintenanceId)
                 .orElseThrow(() -> new RuntimeException("Maintenance not found"));
 
-        // 🔥 LineModule (futuro)
+        // 🔥 1. Obtener o crear template (LineModule)
         LineModule lineModule = lineModuleRepository
                 .findByLine_IdAndModuleName(lineId, cleanName)
                 .orElse(null);
@@ -88,21 +85,19 @@ public class MaintenanceModuleService {
             lineModule.setLine(line);
             lineModule.setModuleName(cleanName);
             lineModule.setActive(true);
-            lineModuleRepository.save(lineModule);
+            lineModule = lineModuleRepository.save(lineModule);
         } else {
             lineModule.setActive(true);
+            lineModuleRepository.save(lineModule);
         }
 
-        // 🔥 MaintenanceModule (presente)
-        boolean exists = maintenanceModuleRepository
-                .existsByMaintenance_IdAndModuleName(maintenanceId, cleanName);
+        // 🔥 2. Crear SIEMPRE nueva instancia (MaintenanceModule)
+        MaintenanceModule mm = new MaintenanceModule();
+        mm.setMaintenance(maintenance);
+        mm.setLineModule(lineModule); // 🔥 ESTA ES LA CLAVE
+        mm.setModuleName(cleanName);  // opcional (para UI)
 
-        if (!exists) {
-            MaintenanceModule mm = new MaintenanceModule();
-            mm.setMaintenance(maintenance);
-            mm.setModuleName(cleanName);
-            maintenanceModuleRepository.save(mm);
-        }
+        maintenanceModuleRepository.save(mm);
     }
 
     @Transactional

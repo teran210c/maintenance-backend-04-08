@@ -17,5 +17,9 @@ public class MaintenanceModule {
     @JoinColumn(name = "maintenance_id", nullable = false)
     private MaintenanceTask maintenance;
 
+    @ManyToOne
+    @JoinColumn(name = "line_module_id", nullable = false)
+    private LineModule lineModule;
+
     private String moduleName;
 }
