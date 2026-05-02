@@ -21,4 +21,7 @@ public class ChecklistTemplate {
 
     @Enumerated(EnumType.STRING)
     private MaintenanceType maintenanceType;
+
+    @Column(nullable = false)
+    private boolean active = true;
 }

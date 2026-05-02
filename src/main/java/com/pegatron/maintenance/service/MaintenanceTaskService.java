@@ -296,9 +296,6 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
         task.setStatus(MaintenanceStatus.IN_PROGRESS);
         repository.save(task);
 
-        List<MaintenanceModule> existingModules =
-                moduleRepository.findByMaintenanceId(task.getId());
-
         List<LineModule> lineModules =
                 lineModuleRepository.findByLine_Id(lineId);
 
@@ -309,26 +306,25 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
             module.setModuleName(lm.getModuleName());
             MaintenanceModule savedModule = moduleRepository.save(module);
 
-            System.out.println("TYPE: " + type);
+            // 🔥 MISMA NORMALIZACIÓN
+            String normalizedModule = normalizeModule(lm.getModuleName());
 
             List<ChecklistTemplate> templates =
-                    checklistTemplateRepository.findByModuleNameAndMaintenanceType(
-                            lm.getModuleName(),
+                    checklistTemplateRepository.findByModuleNameAndMaintenanceTypeAndActiveTrue(
+                            normalizedModule,
                             type
                     );
 
-            System.out.println("Templates encontrados: " + templates.size());
-
-            if (templates.isEmpty()) continue;
-
             for (ChecklistTemplate temp : templates) {
+
                 ChecklistResult result = new ChecklistResult();
 
                 result.setModule(savedModule);
+                result.setTemplate(temp); // 🔥 clave
                 result.setItemName(temp.getItemName());
                 result.setResult(ChecklistStatus.PENDING);
                 result.setNotes("");
-                result.setMaintenanceType(type); // ✔ FIX
+                result.setMaintenanceType(type);
 
                 checklistResultRepository.save(result);
             }
@@ -347,5 +343,11 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
             case SEMESTRAL -> baseDate.plusMonths(6);
             case ANUAL -> baseDate.plusYears(1);
         };
+    }
+
+    private String normalizeModule(String name) {
+        return name.replaceAll("\\d+", "") // quita números
+                .trim()
+                .toUpperCase();         // estandariza
     }
 }

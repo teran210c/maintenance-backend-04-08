@@ -49,21 +49,22 @@ public class ChecklistResultService {
         }).orElseThrow(() -> new RuntimeException("No se encontró el item con ID: " + result.getId()));
     }
 
-
     @Transactional
     public ChecklistResult addTaskToModule(Long moduleId, String itemName) {
 
-        String cleanName = itemName.trim();
+        String cleanName = itemName.trim().toLowerCase();
 
         MaintenanceModule module = moduleRepository.findById(moduleId)
                 .orElseThrow(() -> new RuntimeException("Module not found"));
 
         MaintenanceTask task = module.getMaintenance();
 
-        // 🔥 buscar o crear template
-        Optional<ChecklistTemplate> existingTemplate = templateRepository
-                .findByModuleNameIgnoreCaseAndItemNameIgnoreCaseAndMaintenanceType(
-                        module.getModuleName(),
+        String normalizedModule = normalizeModule(module.getModuleName());
+
+        // 🔥 buscar template SIN filtrar por active (para poder reactivar)
+        Optional<ChecklistTemplate> existingTemplate =
+                templateRepository.findByModuleNameIgnoreCaseAndItemNameIgnoreCaseAndMaintenanceType(
+                        normalizedModule,
                         cleanName,
                         task.getType()
                 );
@@ -71,31 +72,37 @@ public class ChecklistResultService {
         ChecklistTemplate template;
 
         if (existingTemplate.isPresent()) {
+
             template = existingTemplate.get();
+
+            // 🔥 si estaba desactivado → reactivar
+            if (!template.isActive()) {
+                template.setActive(true);
+                templateRepository.save(template);
+            }
+
         } else {
+
             template = new ChecklistTemplate();
-            template.setItemName(cleanName);
-            template.setModuleName(module.getModuleName());
+            template.setItemName(cleanName); // 🔥 siempre lowercase
+            template.setModuleName(normalizedModule);
             template.setMaintenanceType(task.getType());
+            template.setActive(true);
 
             templateRepository.save(template);
         }
 
-        // 🔥 crear result ligado al template (por ID)
-        ChecklistResult newItem = new ChecklistResult();
-        newItem.setModule(module);
-        newItem.setTemplate(template);
-        newItem.setItemName(template.getItemName());
-        newItem.setMaintenanceType(task.getType());
-        newItem.setResult(ChecklistStatus.PENDING);
-        newItem.setNotes("");
+        ChecklistResult result = new ChecklistResult();
+        result.setModule(module);
+        result.setTemplate(template);
+        result.setItemName(template.getItemName());
+        result.setMaintenanceType(task.getType());
+        result.setResult(ChecklistStatus.PENDING);
+        result.setNotes("");
 
-        return resultRepository.save(newItem);
+        return resultRepository.save(result);
     }
 
-    public void delete(Long id) {
-        resultRepository.deleteById(id);
-    }
 
     @Transactional
     public ChecklistResult updateTask(Long id, String newName) {
@@ -123,5 +130,29 @@ public class ChecklistResultService {
         }
 
         return resultRepository.save(result);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+
+        ChecklistResult result = resultRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Result not found"));
+
+        ChecklistTemplate template = result.getTemplate();
+
+        // 🔥 1. borrar el result actual
+        resultRepository.delete(result);
+
+        // 🔥 2. desactivar template (para que no aparezca en futuros maintenances)
+        if (template != null) {
+            template.setActive(false);
+            templateRepository.save(template);
+        }
+    }
+
+    private String normalizeModule(String name) {
+        return name.replaceAll("\\d+", "")
+                .trim()
+                .toUpperCase();
     }
 }
