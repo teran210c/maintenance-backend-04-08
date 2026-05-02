@@ -9,7 +9,9 @@ import com.pegatron.maintenance.repository.ChecklistResultRepository;
 import com.pegatron.maintenance.repository.MaintenanceModuleRepository;
 import com.pegatron.maintenance.repository.MaintenanceTaskRepository;
 import org.springframework.stereotype.Service;
-
+import com.pegatron.maintenance.dto.ConformanceHistoryDetailedDTO;
+import com.pegatron.maintenance.dto.ModuleScoreDTO;
+import com.pegatron.maintenance.model.MaintenanceStatus;
 import java.util.*;
 
 @Service
@@ -151,4 +153,47 @@ public class ConformanceService {
         return history;
     }
 
+    public List<ConformanceHistoryDetailedDTO> getDetailedHistory(Long lineId) {
+
+        List<MaintenanceTask> maintenances =
+                maintenanceRepository.findByLine_IdAndStatus(
+                        lineId, MaintenanceStatus.COMPLETED
+                );
+
+        List<ConformanceHistoryDetailedDTO> result = new ArrayList<>();
+
+        for (MaintenanceTask mt : maintenances) {
+
+            List<MaintenanceModule> modules =
+                    moduleRepository.findByMaintenanceId(mt.getId());
+
+            List<ModuleScoreDTO> moduleScores = new ArrayList<>();
+
+            for (MaintenanceModule mm : modules) {
+
+                List<ChecklistResult> results =
+                        resultRepository.findByModule_Id(mm.getId());
+
+                int total = results.size();
+
+                int completed = (int) results.stream()
+                        .filter(r -> r.getResult() == ChecklistStatus.COMPLETED)
+                        .count();
+
+                int score = total == 0 ? 0 : (completed * 100) / total;
+
+                moduleScores.add(
+                        new ModuleScoreDTO(mm.getModuleName(), score)
+                );
+            }
+
+            result.add(new ConformanceHistoryDetailedDTO(
+                    mt.getPerformedDate().toString(),
+                    mt.getId(),
+                    moduleScores
+            ));
+        }
+
+        return result;
+    }
 }

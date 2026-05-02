@@ -1,6 +1,7 @@
 package com.pegatron.maintenance.controller;
 
 import com.pegatron.maintenance.dto.ConformanceHistoryDTO;
+import com.pegatron.maintenance.dto.ConformanceHistoryDetailedDTO;
 import com.pegatron.maintenance.dto.ConformanceResponseDTO;
 import com.pegatron.maintenance.service.ConformanceService;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,11 @@ public class ConformanceController {
 
         return conformanceService.getHistory(lineId);
 
+    }
+
+    @GetMapping("/history-detailed/{lineId}")
+    public List<ConformanceHistoryDetailedDTO> getDetailedHistory(@PathVariable Long lineId) {
+        return conformanceService.getDetailedHistory(lineId);
     }
 
 
