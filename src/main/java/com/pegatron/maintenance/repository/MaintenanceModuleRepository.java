@@ -13,4 +13,5 @@ public interface MaintenanceModuleRepository extends JpaRepository<MaintenanceMo
 
     void deleteByMaintenance_Id(Long maintenanceId);
 
+    List<MaintenanceModule> findByMaintenance_Line_IdAndModuleName(Long lineId, String moduleName);
 }

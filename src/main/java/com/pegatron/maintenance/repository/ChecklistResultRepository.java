@@ -13,4 +13,6 @@ public interface ChecklistResultRepository extends JpaRepository<ChecklistResult
     Optional<ChecklistResult> findByModule_IdAndItemName(Long moduleId, String itemName);
 
     void deleteByModule_Maintenance_Id(Long maintenanceId);
+
+    void deleteByModule_Id(Long id);
 }

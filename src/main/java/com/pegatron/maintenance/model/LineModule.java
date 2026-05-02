@@ -15,9 +15,15 @@ public class LineModule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String moduleName; // PRINTER, SPI, NPM, OVEN, AOI
+
+
     @ManyToOne
     @JoinColumn(name = "line_id", nullable = false)
     private Line line;
 
-    private String moduleName; // PRINTER, SPI, NPM, OVEN, AOI
+    @Column(nullable = false)
+    private boolean active = true;
+
+
 }
