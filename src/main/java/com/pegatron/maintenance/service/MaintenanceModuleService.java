@@ -104,4 +104,38 @@ public class MaintenanceModuleService {
             maintenanceModuleRepository.save(mm);
         }
     }
+
+    @Transactional
+    public void update(Long id, String newName) {
+
+        String cleanName = newName.trim().toUpperCase();
+
+        // 🔥 1. obtener MaintenanceModule actual
+        MaintenanceModule mm = maintenanceModuleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("MaintenanceModule not found"));
+
+        String oldName = mm.getModuleName();
+        Long lineId = mm.getMaintenance().getLine().getId();
+
+        // 🔥 2. actualizar TODOS los MaintenanceModules de ese nombre
+        List<MaintenanceModule> modules =
+                maintenanceModuleRepository.findByMaintenance_Line_IdAndModuleName(
+                        lineId,
+                        oldName
+                );
+
+        for (MaintenanceModule m : modules) {
+            m.setModuleName(cleanName);
+        }
+
+        maintenanceModuleRepository.saveAll(modules);
+
+        // 🔥 3. actualizar LineModule (futuro)
+        LineModule lineModule = lineModuleRepository
+                .findByLine_IdAndModuleName(lineId, oldName)
+                .orElseThrow(() -> new RuntimeException("LineModule not found"));
+
+        lineModule.setModuleName(cleanName);
+        lineModuleRepository.save(lineModule);
+    }
 }

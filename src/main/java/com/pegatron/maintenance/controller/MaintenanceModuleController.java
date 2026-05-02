@@ -34,4 +34,12 @@ public class MaintenanceModuleController {
     ) {
         service.addModule(lineId, maintenanceId, moduleName);
     }
+
+    @PutMapping("/{id}")
+    public void update(
+            @PathVariable Long id,
+            @RequestParam String moduleName
+    ) {
+        service.update(id, moduleName);
+    }
 }
