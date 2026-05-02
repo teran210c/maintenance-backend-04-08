@@ -25,4 +25,13 @@ public class MaintenanceModuleController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @PostMapping("/add")
+    public void addModule(
+            @RequestParam Long lineId,
+            @RequestParam Long maintenanceId,
+            @RequestParam String moduleName
+    ) {
+        service.addModule(lineId, maintenanceId, moduleName);
+    }
 }
