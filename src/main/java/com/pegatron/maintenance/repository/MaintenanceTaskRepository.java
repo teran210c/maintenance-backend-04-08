@@ -104,4 +104,6 @@ public interface MaintenanceTaskRepository extends JpaRepository<MaintenanceTask
     );
 
     List<MaintenanceTask> findByLine_IdAndStatus(Long lineId, MaintenanceStatus maintenanceStatus);
+
+    List<MaintenanceTask> findByStatus(MaintenanceStatus maintenanceStatus);
 }

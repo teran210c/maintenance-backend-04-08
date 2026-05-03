@@ -31,36 +31,40 @@ public class ConformanceService {
         this.maintenanceRepository = maintenanceRepository;
     }
 
-    public ConformanceResponseDTO getConformance(Long maintenanceId) {
+    public List<ConformanceModuleDTO> getPerformance() {
 
-        MaintenanceTask task = maintenanceRepository.findById(maintenanceId)
-                .orElseThrow(() -> new RuntimeException("Maintenance not found"));
+        // 1. Traer solo maintenances COMPLETADOS
+        List<MaintenanceTask> completedTasks =
+                maintenanceRepository.findByStatus(MaintenanceStatus.COMPLETED);
 
-        List<MaintenanceModule> modules =
-                moduleRepository.findByMaintenanceId(maintenanceId);
+        // 2. Agrupar resultados por nombre base de máquina
+        Map<String, List<ChecklistResult>> grouped = new HashMap<>();
 
-        List<ConformanceModuleDTO> moduleDTOs = new ArrayList<>();
+        for (MaintenanceTask task : completedTasks) {
 
-        // Contar cuántas máquinas hay de cada tipo
-        Map<String, Long> moduleTypeCount = new HashMap<>();
+            List<MaintenanceModule> modules =
+                    moduleRepository.findByMaintenanceId(task.getId());
 
-        for (MaintenanceModule module : modules) {
-            moduleTypeCount.put(
-                    module.getModuleName(),
-                    moduleTypeCount.getOrDefault(module.getModuleName(), 0L) + 1
-            );
+            for (MaintenanceModule module : modules) {
+
+                List<ChecklistResult> results =
+                        resultRepository.findByModule_Id(module.getId());
+
+                String baseName = module.getModuleName(); // 👈 clave
+
+                grouped
+                        .computeIfAbsent(baseName, k -> new ArrayList<>())
+                        .addAll(results);
+            }
         }
 
-        // Contador para numerarlas
-        Map<String, Integer> moduleNumbering = new HashMap<>();
+        // 3. Calcular score por máquina
+        List<ConformanceModuleDTO> performanceList = new ArrayList<>();
 
-        for (MaintenanceModule module : modules) {
+        for (Map.Entry<String, List<ChecklistResult>> entry : grouped.entrySet()) {
 
-            List<ChecklistResult> results =
-                    resultRepository.findByModule_Id(module.getId());
-
-            System.out.println("Module: " + module.getModuleName());
-            System.out.println("Results: " + results.size());
+            String moduleName = entry.getKey();
+            List<ChecklistResult> results = entry.getValue();
 
             int total = results.size();
 
@@ -68,26 +72,12 @@ public class ConformanceService {
                     .filter(r -> r.getResult() == ChecklistStatus.COMPLETED)
                     .count();
 
-            results.forEach(r -> System.out.println("Result: " + r.getResult()));
-
             int score = total == 0 ? 0 : (completed * 100) / total;
 
-            String baseName = module.getModuleName();
-            String displayName = baseName;
-
-            // Si hay más de una máquina del mismo tipo → numerar
-            if (moduleTypeCount.get(baseName) > 1) {
-
-                int number = moduleNumbering.getOrDefault(baseName, 0) + 1;
-                moduleNumbering.put(baseName, number);
-
-                displayName = baseName + " " + number;
-            }
-
-            moduleDTOs.add(
+            performanceList.add(
                     new ConformanceModuleDTO(
-                            module.getId(),
-                            displayName,
+                            null,          // no necesitas id aquí
+                            moduleName,
                             completed,
                             total,
                             score
@@ -95,15 +85,12 @@ public class ConformanceService {
             );
         }
 
+        // 4. Ordenar: peores primero
+        performanceList.sort(Comparator.comparingInt(ConformanceModuleDTO::getScore));
 
-
-        int overallScore = moduleDTOs.isEmpty()
-                ? 0
-                : moduleDTOs.stream()
-                .mapToInt(ConformanceModuleDTO::getScore)
-                .sum() / moduleDTOs.size();
-
-        return new ConformanceResponseDTO(moduleDTOs, overallScore);
+        return performanceList.stream()
+                .limit(3)
+                .toList();
     }
 
     public List<ConformanceHistoryDTO> getHistory(Long lineId) {
