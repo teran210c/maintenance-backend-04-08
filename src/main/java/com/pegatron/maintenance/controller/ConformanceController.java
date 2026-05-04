@@ -1,11 +1,9 @@
 package com.pegatron.maintenance.controller;
 
-import com.pegatron.maintenance.dto.ConformanceHistoryDTO;
-import com.pegatron.maintenance.dto.ConformanceHistoryDetailedDTO;
-import com.pegatron.maintenance.dto.ConformanceModuleDTO;
-import com.pegatron.maintenance.dto.ConformanceResponseDTO;
+import com.pegatron.maintenance.dto.*;
 import com.pegatron.maintenance.service.ConformanceService;
 import org.springframework.web.bind.annotation.*;
+import com.pegatron.maintenance.dto.ConformanceDTO;
 
 import java.util.List;
 
@@ -23,6 +21,11 @@ public class ConformanceController {
 //    public ConformanceResponseDTO getConformance(@PathVariable Long maintenanceId) {
 //        return conformanceService.getConformance(maintenanceId);
 //    }
+
+    @GetMapping("/{maintenanceId}")
+    public ConformanceDTO getConformance(@PathVariable Long maintenanceId) {
+        return conformanceService.getConformance(maintenanceId);
+    }
 
     @GetMapping("/performance")
     public List<ConformanceModuleDTO> getPerformance() {

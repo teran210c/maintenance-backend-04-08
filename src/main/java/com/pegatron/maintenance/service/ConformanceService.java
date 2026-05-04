@@ -183,4 +183,43 @@ public class ConformanceService {
 
         return result;
     }
+
+    public ConformanceDTO getConformance(Long maintenanceId) {
+
+        List<MaintenanceModule> modules =
+                moduleRepository.findByMaintenanceId(maintenanceId);
+
+        List<ModuleConformanceDTO> result = new ArrayList<>();
+
+        int totalCompleted = 0;
+        int totalItems = 0;
+
+        for (MaintenanceModule m : modules) {
+
+            List<ChecklistResult> checklist =
+                    resultRepository.findByModule_Id(m.getId());
+
+            int total = checklist.size();
+
+            int completed = (int) checklist.stream()
+                    .filter(r -> r.getResult() == ChecklistStatus.COMPLETED)
+                    .count();
+
+            int score = total == 0 ? 0 : (completed * 100) / total;
+
+            totalCompleted += completed;
+            totalItems += total;
+
+            result.add(new ModuleConformanceDTO(
+                    m.getModuleName(),
+                    completed,
+                    total,
+                    score
+            ));
+        }
+
+        int overall = totalItems == 0 ? 0 : (totalCompleted * 100) / totalItems;
+
+        return new ConformanceDTO(result, overall);
+    }
 }
