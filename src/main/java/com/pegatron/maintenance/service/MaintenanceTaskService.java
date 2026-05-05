@@ -296,8 +296,8 @@ import static com.pegatron.maintenance.model.MaintenanceType.*;
         task.setStatus(MaintenanceStatus.IN_PROGRESS);
         repository.save(task);
 
-        List<LineModule> lineModules =
-                lineModuleRepository.findByLine_Id(lineId);
+        // Ahora solo traerá los que tengan status 'true'
+        List<LineModule> lineModules = lineModuleRepository.findByLine_IdAndActiveTrue(lineId);
 
         for (LineModule lm : lineModules) {
 
